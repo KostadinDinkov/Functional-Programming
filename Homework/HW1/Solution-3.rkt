@@ -108,3 +108,18 @@
 (define (events-for-day date cal)
   (filter (lambda cal-date (equal? (caar cal-date) date)) cal))
 
+(define (calendar-sort cal)
+  (if (null? cal) '()
+      (if (null? (filter (lambda el (date< (caar el) (caar cal))) cal))
+          (cons (list (caar cal) (cdar cal)) (calendar-sort (cdr cal)))
+          (calendar-sort (append (filter (lambda el (date< (caar el) (caar cal))) cal) (filter (lambda el (not (date< (caar el) (caar cal)))) cal))))))
+
+(define (uniq alist)
+  (if (null? alist) '()
+      (if (assoc (caar alist) (cdr alist))
+          (cons (append (car alist) (cdr (assoc (caar alist) (cdr alist)))) (uniq (cdr alist)))
+          (cons (car alist) (uniq (cdr alist))))))
+
+(define (calendar cal)
+  (define sorted (calendar-sort cal))
+  (uniq sorted))
