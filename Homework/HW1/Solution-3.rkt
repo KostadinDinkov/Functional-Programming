@@ -82,7 +82,7 @@
    ;                 (* (/ 1461 4) (+ (year date) 4800 (/ (- (month date) 14) 12))))
     ;             (* (/ 3 4) (/ (+ (year date) 4900 (/ (- (month date) 14) 12)) 100))
      ;            32075))
-;  jdn)
+  ;jdn)
 
 (define (weekday date)
   (define a (quotient (year date) 100))
@@ -117,9 +117,87 @@
 (define (uniq alist)
   (if (null? alist) '()
       (if (assoc (caar alist) (cdr alist))
-          (cons (append (car alist) (cdr (assoc (caar alist) (cdr alist)))) (uniq (cdr alist)))
+          (cons (append (car alist)
+                        (cdr (assoc (caar alist) (cdr alist))))
+                (uniq (cddr alist)))
           (cons (car alist) (uniq (cdr alist))))))
 
 (define (calendar cal)
   (define sorted (calendar-sort cal))
   (uniq sorted))
+
+;unit-testing
+(require rackunit rackunit/text-ui)
+
+(define sol3-tests
+  (test-suite "Date tests"
+    (test-case "should return 21 as day of 21.11.2019" (check-eq? (day (make-date 21 11 2019)) 21))
+    (test-case "should return 30 as day of 30.08.2019" (check-eq? (day (make-date 30 8 2019)) 30))
+    (test-case "should return 11 as month of 21.11.2019" (check-eq? (month (make-date 21 11 2019)) 11))
+    (test-case "should return 8 as month of 21.11.2019" (check-eq? (month (make-date 30 8 2019)) 8))
+    (test-case "should return 2019 as year of 21.11.2019" (check-eq? (year (make-date 21 11 2019)) 2019))
+    (test-case "should return 2019 as year of 21.11.2019" (check-eq? (year (make-date 30 8 2019)) 2019))
+
+    (test-case "should return true for date 21.11.2019" (check-eq? (date? (make-date 21 11 2019)) #t))
+    (test-case "should return true for date 21.11.-2019" (check-eq? (date? (make-date 21 11 -2019)) #t))
+    (test-case "should return false for date 51.11.2019" (check-eq? (date? (make-date 51 11 2019)) #f))
+    (test-case "should return false for date 21.13.2019" (check-eq? (date? (make-date 21 13 2019)) #f))
+    (test-case "should return true for date 28.2.2000" (check-eq? (date? (make-date 29 2 2000)) #t))
+    (test-case "should return false for date 28.2.2100" (check-eq? (date? (make-date 29 2 2100)) #f))
+    
+    (test-case "should return \"21.11.2019\" for date 21.11.2019" (check-equal? (date->string (make-date 21 11 2019)) "21.11.2019"))
+    (test-case "should return \"1.2.1239\" for date 1.2.-1239" (check-equal? (date->string (make-date 1 2 -1239)) "1.2.-1239"))
+    (test-case "should return \"6.12.2019\" for date 6.12.2019" (check-equal? (date->string (make-date 6 12 2019)) "6.12.2019"))
+    (test-case "should return \"3.3.2000\" for date 3.3.2000" (check-equal? (date->string (make-date 3 3 2000)) "3.3.2000"))
+    (test-case "should return \"1.1.681\" for date 1.1.681" (check-equal? (date->string (make-date 1 1 681)) "1.1.681"))
+
+    (test-case "should return \"22.11.2019\" for date 21.11.2019" (check-equal? (date->string (next-day (make-date 21 11 2019))) "22.11.2019"))
+    (test-case "should return \"2.2.1239\" for date 1.2.-1239" (check-equal? (date->string (next-day (make-date 1 2 -1239))) "2.2.-1239"))
+    (test-case "should return \"7.12.2019\" for date 6.12.2019" (check-equal? (date->string (next-day (make-date 6 12 2019))) "7.12.2019"))
+    (test-case "should return \"1.1.2000\" for date 31.12.1999" (check-equal? (date->string (next-day (make-date 31 12 1999))) "1.1.2000"))
+    (test-case "should return \"29.2.2000\" for date 28.2.2000" (check-equal? (date->string (next-day (make-date 28 2 2000))) "29.2.2000"))
+    (test-case "should return \"29.2.2004\" for date 28.2.2004" (check-equal? (date->string (next-day (make-date 28 2 2004))) "29.2.2004"))
+    (test-case "should return \"1.3.2100\" for date 28.2.2100" (check-equal? (date->string (next-day (make-date 28 2 2100))) "1.3.2100"))
+    (test-case "should return \"1.3.2019\" for date 28.2.2019" (check-equal? (date->string (next-day (make-date 28 2 2019))) "1.3.2019"))
+    
+    (test-case "should return true if the first date is before the second date, false else" (check-eq? (date< (make-date 21 11 2019) (make-date 1 1 2020)) #t))
+    (test-case "should return true if the first date is before the second date, false else" (check-eq? (date< (make-date 3 5 681) (make-date 1 1 2010)) #t))
+    (test-case "should return true if the first date is before the second date, false else" (check-eq? (date< (make-date 30 3 2014) (make-date 31 1 2014)) #f))
+    (test-case "should return true if the first date is before the second date, false else" (check-eq? (date< (make-date 21 11 2019) (make-date 6 12 2020)) #t))
+
+    (test-case "should return 'Thursday for date 21.11.2019" (check-eq? (weekday (make-date 21 11 2019)) 'Thursday))
+    (test-case "should return 'Friday for date 22.11.2019" (check-eq? (weekday (make-date 22 11 2019)) 'Friday))
+    (test-case "should return 'Monday for date 9.12.2019" (check-eq? (weekday (make-date 9 12 2019)) 'Monday))
+    (test-case "should return 'Wednesday for date 1.1.2020" (check-eq? (weekday (make-date 31 12 2009)) 'Thursday))
+
+    (test-case "should return \"28.11.2019\" for the first Thursday after 21.11.2019" (check-equal? (date->string (next-weekday 'Thursday (make-date 21 11 2019))) "28.11.2019"))
+    (test-case "should return \"26.11.2019\" for the first Tuesday after 21.11.2019" (check-equal? (date->string (next-weekday 'Tuesday (make-date 21 11 2019))) "26.11.2019"))
+    (test-case "should return \"9.5.2008\" for the first Friday after 6.5.2008" (check-equal? (date->string (next-weekday 'Friday (make-date 6 5 2008))) "9.5.2008"))
+    (test-case "should return \"10.5.2008\" for the first Saturday after 8.5.2008" (check-equal? (date->string (next-weekday 'Saturday (make-date 8 5 2008))) "10.5.2008"))
+
+    (test-case "should return all the event for a date" (check-equal? (events-for-day (make-date 27 11 2019)
+                                                                                      (list (cons (make-date 27 11 2019) "Първа лекция за Хаскел")
+                                                                                            (cons (make-date 27 11 2019) "Спират водата в Младост")
+                                                                                            (cons (make-date 28 11 2019) "Спират водата в Лозенец")))
+
+                                                                      '(((27 11 2019) . "Първа лекция за Хаскел")
+                                                                        ((27 11 2019) . "Спират водата в Младост"))))
+    (test-case "should return all the event for a date" (check-equal? (events-for-day (make-date 28 11 2019)
+                                                                                      (list (cons (make-date 27 11 2019) "Първа лекция за Хаскел")
+                                                                                            (cons (make-date 27 11 2019) "Спират водата в Младост")
+                                                                                            (cons (make-date 28 11 2019) "Спират водата в Лозенец")))
+
+                                                                      '(((28 11 2019) . "Спират водата в Лозенец"))))
+
+    (test-case "should return all the event for a date" (check-equal? (calendar (list (cons (make-date 27 11 2019) "Първа лекция за Хаскел")
+                                                                                      (cons (make-date 25 12 2019) "Коледа")
+                                                                                      (cons (make-date 27 11 2019) "Спират водата в Младост")
+                                                                                      (cons (make-date 23 3 2018) "Концерт на Лепа Брена")))
+
+                                                                      '(((23 3 2018) "Концерт на Лепа Брена")
+                                                                        ((27 11 2019) "Първа лекция за Хаскел" "Спират водата в Младост")
+                                                                        ((25 12 2019) "Коледа"))))
+  )
+)
+
+(run-tests sol3-tests 'verbose)
