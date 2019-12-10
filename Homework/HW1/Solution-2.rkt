@@ -1,16 +1,40 @@
-#lang racket/base
+#lang racket
+
+;All of the commented out code is a working solution using streams
+
+
+;(define empty-stream '())
+;(define-syntax cons-stream
+;  (syntax-rules () ((cons-stream h t)
+;                    (cons h (delay t)))))
+
+;(define (head str) (car str))
+;(define (tail str) (force (cdr str)))
+;(define empty-stream? null?)
+
+;(define (progress prefix l)
+;  (if (null? l)
+;      (list (append prefix empty-stream))
+;      (cons-stream prefix
+;                   (progress (append prefix (list (car l))) (cdr l)))))
+  
+;(define (all s)
+;  (if (empty-stream? s) '()
+;      (cons (head s) (all (tail s)))))
+
+;(define (prefixes xs)
+;  (all (progress '() xs)))
 
 (define (progress toPrint remaining)
   (if (null? remaining)
       (list toPrint)
       (cons toPrint
             (progress (append toPrint
-                         (list (car remaining)))
-                 (cdr remaining)))))
+                              (list (car remaining)))
+                      (cdr remaining)))))
 
 (define (prefixes xs)
-  (progress '() xs)
-)
+  (progress '() xs))
 
 ;unit-testing
 (require rackunit rackunit/text-ui)
