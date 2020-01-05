@@ -59,6 +59,9 @@ treeFromListAtLevel level points = Fork forkPoint leftTree rightTree
        leftTree = treeFromListAtLevel ((level + 1) `mod` (dimension forkPoint)) $ filter (\point -> coordinate level point < coordinate level forkPoint) rest
        rightTree = treeFromListAtLevel ((level + 1) `mod` (dimension forkPoint)) $ filter (\point -> not $ coordinate level point < coordinate level forkPoint) rest
 
+treeFromList :: Point p => [p] -> TreeNode p
+treeFromList points = treeFromListAtLevel 0 points
+
 nearestNeighbour :: Point p => p -> TreeNode p -> p
 nearestNeighbour origin (Fork root Empty Empty) = root
 nearestNeighbour origin (Fork root left Empty) = if (distance origin root) < (distance origin (nearestNeighbour origin left)) then root else (nearestNeighbour origin left)
@@ -67,7 +70,14 @@ nearestNeighbour origin (Fork root left right)
  |(distance origin root) < (distance origin (nearestNeighbour origin left)) = if (distance origin root) < (distance origin (nearestNeighbour origin right)) then root else (nearestNeighbour origin right)
  |(distance origin root) < (distance origin (nearestNeighbour origin right)) = if (distance origin root) < (distance origin (nearestNeighbour origin left)) then root else (nearestNeighbour origin left)
  |(distance origin (nearestNeighbour origin left)) < (distance origin (nearestNeighbour origin right)) = (nearestNeighbour origin left)
- |otherwise = (nearestNeighbour origin right)
+ |otherwise = nearestNeighbour origin right
+
+pointInRange :: Point p => p -> p -> p -> Bool
+pointInRange from to point = and[c from <= c point && c point <= c to | d <- [0..(dimension from - 1)], c <- [coordinate d]]
+
+inRange :: Point p => p -> p -> TreeNode p -> [p]
+inRange from to Empty = []
+inRange from to (Fork root left right) = if pointInRange from to root then root : (inRange from to left) ++ (inRange from to right) else (inRange from to left) ++ (inRange from to right)
 
 mergeSort :: Ord t => [t] -> [t]
 mergeSort [] = []
